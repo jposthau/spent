@@ -1,5 +1,7 @@
 package com.jordan.spent.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -21,6 +23,8 @@ public class Expense {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal monthlyAmount;
 
+    @JsonBackReference
+    @JsonIgnoreProperties("expenses")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
