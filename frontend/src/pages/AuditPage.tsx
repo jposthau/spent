@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getAudit } from '../api/audit';
-import { getUserId } from '../utils/storage';
+import { getAudit, getNarrative } from '../api/audit';
+import { getUserId, getNarrativeCache, setNarrativeCache, clearNarrativeCache } from '../utils/storage';
 import { usd, hrs, dec } from '../utils/format';
 import type { AuditSummary, ExpenseSummary } from '../types/audit';
 import type { Category } from '../types/expense';
@@ -205,6 +205,25 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [narrative, setNarrative] = useState<string | null>(
+    userId ? getNarrativeCache(userId) : null
+  );
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [narrativeError, setNarrativeError] = useState('');
+
+  const handleGenerateNarrative = () => {
+    if (!userId) return;
+    setNarrativeLoading(true);
+    setNarrativeError('');
+    getNarrative(userId)
+      .then(text => {
+        setNarrative(text);
+        setNarrativeCache(userId, text);
+      })
+      .catch(() => setNarrativeError('Failed to generate narrative. Check that your Anthropic API key is configured.'))
+      .finally(() => setNarrativeLoading(false));
+  };
+
   useEffect(() => {
     if (!userId) { navigate('/'); return; }
     getAudit(userId)
@@ -276,6 +295,70 @@ export default function AuditPage() {
         breakdown={audit.expenseBreakdown}
         totalAnnualExpenses={audit.totalAnnualExpenses}
       />
+
+      {/* AI Audit */}
+      <div style={{ backgroundColor: '#141414', border: '1px solid #242424', borderRadius: '14px', padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: narrative || narrativeLoading || narrativeError ? '20px' : '0' }}>
+          <div>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#a3a3a3', textTransform: 'uppercase', letterSpacing: '0.06em' }}>AI Audit</p>
+            <p style={{ fontSize: '12px', color: '#525252', marginTop: '4px' }}>Your financial story in plain English</p>
+          </div>
+          {!narrative && (
+            <button
+              onClick={handleGenerateNarrative}
+              disabled={narrativeLoading}
+              style={{
+                backgroundColor: narrativeLoading ? '#1c1a17' : '#f59e0b',
+                color: narrativeLoading ? '#525252' : '#0f0f0f',
+                border: narrativeLoading ? '1px solid #292524' : 'none',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: narrativeLoading ? 'not-allowed' : 'pointer',
+                transition: 'background-color 0.15s',
+                flexShrink: 0,
+              }}
+            >
+              {narrativeLoading ? 'Generating…' : 'Generate My Audit'}
+            </button>
+          )}
+        </div>
+
+        {narrativeError && (
+          <p style={{ color: '#f87171', fontSize: '13px', lineHeight: 1.6 }}>{narrativeError}</p>
+        )}
+
+        {narrative && (
+          <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {narrative.split('\n\n').filter(p => p.trim()).map((para, i) => (
+                <p
+                  key={i}
+                  style={{ fontSize: '15px', lineHeight: '1.75', color: '#d4d4d4', margin: 0 }}
+                >
+                  {para.trim()}
+                </p>
+              ))}
+            </div>
+            <button
+              onClick={() => { setNarrative(null); setNarrativeError(''); if (userId) clearNarrativeCache(userId); }}
+              style={{
+                marginTop: '20px',
+                background: 'none',
+                border: '1px solid #2d2d2d',
+                borderRadius: '8px',
+                padding: '8px 14px',
+                fontSize: '12px',
+                color: '#737373',
+                cursor: 'pointer',
+              }}
+            >
+              Regenerate
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
