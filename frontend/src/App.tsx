@@ -9,21 +9,27 @@ import ExpensesPage from './pages/ExpensesPage';
 import AuditPage from './pages/AuditPage';
 import WhatIfPage from './pages/WhatIfPage';
 import AdminPage from './pages/AdminPage';
+import AboutPage from './pages/AboutPage';
 
 const MEMBER_NAV = [
   { to: '/setup',    label: 'Setup'    },
   { to: '/expenses', label: 'Expenses' },
   { to: '/audit',    label: 'Audit'    },
   { to: '/whatif',   label: 'What If'  },
+  { to: '/about',    label: 'About'    },
 ];
 
-const ADMIN_NAV = [...MEMBER_NAV, { to: '/admin', label: 'Admin' }];
+const ADMIN_NAV = [
+  ...MEMBER_NAV.slice(0, -1),
+  { to: '/admin', label: 'Admin' },
+  { to: '/about', label: 'About' },
+];
 
 function AppShell() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const isPublic = ['/login', '/register'].includes(location.pathname);
+  const isPublic = ['/login', '/register', '/about'].includes(location.pathname);
 
   const navLinks = user?.role === 'ADMIN' ? ADMIN_NAV : MEMBER_NAV;
 
@@ -109,6 +115,7 @@ function AppShell() {
         <Routes>
           <Route path="/login"    element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/about"    element={<AboutPage />} />
           <Route path="/setup" element={
             <ProtectedRoute requireSetup={true}>
               <SetupPage />
