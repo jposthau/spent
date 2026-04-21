@@ -133,6 +133,11 @@ export default function LoginPage() {
                 Request access
               </Link>
             </p>
+            <p style={{ fontSize: '12px', color: '#3a3a3a', marginTop: '12px' }}>
+              <Link to="/about" style={{ color: '#3a3a3a', textDecoration: 'none' }}>
+                About this project ↗
+              </Link>
+            </p>
           </form>
         </div>
       </div>
