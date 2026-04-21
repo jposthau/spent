@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { updateUser } from '../api/users';
+import { getUser, updateUser } from '../api/users';
 import { useAuth } from '../context/AuthContext';
 import type { WageType } from '../types/user';
 
@@ -30,13 +30,30 @@ const fieldWrap: React.CSSProperties = {
 export default function SetupPage() {
   const navigate = useNavigate();
   const { user, refreshUser } = useAuth();
-  const [wageType, setWageType] = useState<WageType>('SALARY');
+
+  const [wageType, setWageType]       = useState<WageType>('SALARY');
   const [annualSalary, setAnnualSalary] = useState('');
-  const [hourlyRate, setHourlyRate] = useState('');
+  const [hourlyRate, setHourlyRate]   = useState('');
   const [hoursPerWeek, setHoursPerWeek] = useState('40');
   const [weeksPerYear, setWeeksPerYear] = useState('50');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [fetching, setFetching]       = useState(true);
+  const [error, setError]             = useState('');
+
+  // Pre-populate from saved data
+  useEffect(() => {
+    if (!user) return;
+    getUser(user.id)
+      .then(saved => {
+        if (saved.wageType) setWageType(saved.wageType);
+        if (saved.annualSalary)  setAnnualSalary(String(saved.annualSalary));
+        if (saved.hourlyRate)    setHourlyRate(String(saved.hourlyRate));
+        if (saved.hoursPerWeek)  setHoursPerWeek(String(saved.hoursPerWeek));
+        if (saved.weeksPerYear)  setWeeksPerYear(String(saved.weeksPerYear));
+      })
+      .catch(() => { /* no saved data yet — defaults are fine */ })
+      .finally(() => setFetching(false));
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +62,7 @@ export default function SetupPage() {
     try {
       await updateUser(user!.id, {
         wageType,
-        hourlyRate: wageType === 'HOURLY' ? parseFloat(hourlyRate) : null,
+        hourlyRate:   wageType === 'HOURLY' ? parseFloat(hourlyRate)   : null,
         annualSalary: wageType === 'SALARY' ? parseFloat(annualSalary) : null,
         hoursPerWeek: parseInt(hoursPerWeek, 10),
         weeksPerYear: wageType === 'SALARY' ? 50 : parseInt(weeksPerYear, 10),
@@ -58,6 +75,14 @@ export default function SetupPage() {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px', color: '#525252', fontSize: '14px' }}>
+        Loading…
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '48px 16px', flex: 1 }}>
@@ -184,7 +209,7 @@ export default function SetupPage() {
                 marginTop: '8px',
               }}
             >
-              {loading ? 'Saving...' : 'Continue to Expenses →'}
+              {loading ? 'Saving...' : 'Save & Continue →'}
             </button>
           </form>
         </div>
