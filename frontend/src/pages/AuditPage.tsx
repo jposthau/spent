@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { getAudit, getNarrative } from '../api/audit';
 import { getNarrativeCache, setNarrativeCache, clearNarrativeCache } from '../utils/storage';
 import { useAuth } from '../context/AuthContext';
+import { useIsMobile } from '../hooks/useWindowWidth';
 import { usd, hrs, dec } from '../utils/format';
 import type { AuditSummary, ExpenseSummary } from '../types/audit';
 import type { Category } from '../types/expense';
@@ -201,6 +202,7 @@ function ExpenseBreakdown({ breakdown }: { breakdown: ExpenseSummary[]; totalAnn
 export default function AuditPage() {
   const { user } = useAuth();
   const userId = user!.id;
+  const isMobile = useIsMobile();
   const [audit, setAudit] = useState<AuditSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -254,7 +256,7 @@ export default function AuditPage() {
       </div>
 
       {/* Metric cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '12px' }}>
         <MetricCard
           label="True Hourly Rate"
           value={usd(audit.trueHourlyRate)}
