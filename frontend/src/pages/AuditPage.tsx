@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getAudit, getNarrative } from '../api/audit';
-import { getUserId, getNarrativeCache, setNarrativeCache, clearNarrativeCache } from '../utils/storage';
+import { getNarrativeCache, setNarrativeCache, clearNarrativeCache } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 import { usd, hrs, dec } from '../utils/format';
 import type { AuditSummary, ExpenseSummary } from '../types/audit';
 import type { Category } from '../types/expense';
@@ -161,7 +161,7 @@ function WeekGrid({ weeksWorked, breakdown, totalAnnualExpenses }: {
   );
 }
 
-function ExpenseBreakdown({ breakdown, totalAnnualExpenses }: { breakdown: ExpenseSummary[]; totalAnnualExpenses: number }) {
+function ExpenseBreakdown({ breakdown }: { breakdown: ExpenseSummary[]; totalAnnualExpenses: number }) {
   const sorted = [...breakdown].sort((a, b) => b.annualCost - a.annualCost);
 
   return (
@@ -199,20 +199,19 @@ function ExpenseBreakdown({ breakdown, totalAnnualExpenses }: { breakdown: Expen
 }
 
 export default function AuditPage() {
-  const navigate = useNavigate();
-  const userId = getUserId();
+  const { user } = useAuth();
+  const userId = user!.id;
   const [audit, setAudit] = useState<AuditSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const [narrative, setNarrative] = useState<string | null>(
-    userId ? getNarrativeCache(userId) : null
+    getNarrativeCache(userId)
   );
   const [narrativeLoading, setNarrativeLoading] = useState(false);
   const [narrativeError, setNarrativeError] = useState('');
 
   const handleGenerateNarrative = () => {
-    if (!userId) return;
     setNarrativeLoading(true);
     setNarrativeError('');
     getNarrative(userId)
@@ -225,12 +224,11 @@ export default function AuditPage() {
   };
 
   useEffect(() => {
-    if (!userId) { navigate('/'); return; }
     getAudit(userId)
       .then(setAudit)
       .catch(() => setError('Failed to load audit data.'))
       .finally(() => setLoading(false));
-  }, [userId, navigate]);
+  }, [userId]);
 
   if (loading) {
     return (
@@ -342,7 +340,7 @@ export default function AuditPage() {
               ))}
             </div>
             <button
-              onClick={() => { setNarrative(null); setNarrativeError(''); if (userId) clearNarrativeCache(userId); }}
+              onClick={() => { setNarrative(null); setNarrativeError(''); clearNarrativeCache(userId); }}
               style={{
                 marginTop: '20px',
                 background: 'none',

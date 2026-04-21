@@ -66,8 +66,8 @@ public class DevDataSeeder implements CommandLineRunner {
         log.info("==============================================");
         log.info("  Dev seed data created.");
         log.info("  User ID: {}", saved.getId());
-        log.info("  Paste this in the browser console to skip setup:");
-        log.info("  localStorage.setItem('userId', '{}');  location.href='/audit'", saved.getId());
+        log.info("  Paste this in the browser console to log in as the seed user:");
+        log.info("  fetch('http://localhost:8080/api/dev/login/{}', {{method:'POST',credentials:'include'}}).then(()=>location.href='/audit')", saved.getId());
         log.info("==============================================");
     }
 

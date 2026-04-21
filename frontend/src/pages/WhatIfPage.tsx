@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { calculateWhatIf } from '../api/whatif';
-import { getUserId } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 import { usd, hrs, dec } from '../utils/format';
 import type { CostType, WhatIfRequest, WhatIfResult } from '../types/whatif';
 
@@ -99,8 +98,8 @@ function ResultCard({ result }: { result: WhatIfResult }) {
 }
 
 export default function WhatIfPage() {
-  const navigate = useNavigate();
-  const userId = getUserId();
+  const { user } = useAuth();
+  const userId = user!.id;
 
   const [form, setForm] = useState<WhatIfRequest>({
     itemName: '',
@@ -112,11 +111,6 @@ export default function WhatIfPage() {
   const [result, setResult] = useState<WhatIfResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  if (!userId) {
-    navigate('/');
-    return null;
-  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

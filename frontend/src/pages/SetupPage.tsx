@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createUser } from '../api/users';
-import { setUserId } from '../utils/storage';
+import { updateUser } from '../api/users';
+import { useAuth } from '../context/AuthContext';
 import type { WageType } from '../types/user';
 
 const input: React.CSSProperties = {
@@ -29,6 +29,7 @@ const fieldWrap: React.CSSProperties = {
 
 export default function SetupPage() {
   const navigate = useNavigate();
+  const { user, refreshUser } = useAuth();
   const [wageType, setWageType] = useState<WageType>('SALARY');
   const [annualSalary, setAnnualSalary] = useState('');
   const [hourlyRate, setHourlyRate] = useState('');
@@ -42,14 +43,14 @@ export default function SetupPage() {
     setLoading(true);
     setError('');
     try {
-      const user = await createUser({
+      await updateUser(user!.id, {
         wageType,
         hourlyRate: wageType === 'HOURLY' ? parseFloat(hourlyRate) : null,
         annualSalary: wageType === 'SALARY' ? parseFloat(annualSalary) : null,
         hoursPerWeek: parseInt(hoursPerWeek, 10),
         weeksPerYear: wageType === 'SALARY' ? 50 : parseInt(weeksPerYear, 10),
       });
-      setUserId(user.id);
+      await refreshUser();
       navigate('/expenses');
     } catch {
       setError('Something went wrong. Please try again.');

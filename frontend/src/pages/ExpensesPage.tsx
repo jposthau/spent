@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addExpense, deleteExpense, getExpenses } from '../api/expenses';
-import { getUserId } from '../utils/storage';
+import { useAuth } from '../context/AuthContext';
 import { usd } from '../utils/format';
 import type { Category, Expense } from '../types/expense';
 
@@ -44,7 +44,8 @@ const inputStyle: React.CSSProperties = {
 
 export default function ExpensesPage() {
   const navigate = useNavigate();
-  const userId = getUserId();
+  const { user } = useAuth();
+  const userId = user!.id;
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [name, setName] = useState('');
@@ -53,9 +54,8 @@ export default function ExpensesPage() {
   const [adding, setAdding] = useState(false);
 
   useEffect(() => {
-    if (!userId) { navigate('/'); return; }
     getExpenses(userId).then(setExpenses);
-  }, [userId, navigate]);
+  }, [userId]);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();

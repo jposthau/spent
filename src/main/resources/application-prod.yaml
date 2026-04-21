@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/spent
+    username: spent_user
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+# Trust X-Forwarded-Proto from Nginx so redirect URIs use https://
+server:
+  forward-headers-strategy: native
+
+app:
+  frontend-url: ${APP_FRONTEND_URL}
+  admin-password: MrSZ8%oIVpvcq4$AymC1
