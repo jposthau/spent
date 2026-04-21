@@ -1,0 +1,41 @@
+name: Deploy to Pi
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Build backend
+        env:
+          MAVEN_OPTS: "-Xmx384m"
+        run: |
+          export JAVA_HOME=$HOME/.sdkman/candidates/java/current
+          export PATH=$JAVA_HOME/bin:$PATH
+          ./mvnw clean package -DskipTests --no-transfer-progress
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci --prefer-offline
+          npm run build
+
+      - name: Stop service
+        run: sudo systemctl stop spent
+
+      - name: Deploy artifacts
+        run: |
+          cp target/spent-0.0.1-SNAPSHOT.jar /home/jordan/spent/spent-0.0.1-SNAPSHOT.jar
+          rm -rf /home/jordan/spent/static/*
+          cp -r frontend/dist/* /home/jordan/spent/static/
+
+      - name: Start service
+        if: always()
+        run: sudo systemctl start spent
