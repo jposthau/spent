@@ -13,6 +13,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
       - name: Build backend
         env:
           MAVEN_OPTS: "-Xmx384m"
@@ -24,7 +31,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
-          npm ci --prefer-offline
+          npm ci
           npm run build
 
       - name: Stop service
