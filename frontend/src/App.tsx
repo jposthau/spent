@@ -1,4 +1,4 @@
-import { Routes, Route, NavLink, useLocation } from 'react-router-dom';
+import { Routes, Route, NavLink, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useIsMobile } from './hooks/useWindowWidth';
@@ -29,7 +29,9 @@ function AppShell() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
-  const isPublic = ['/login', '/register', '/about'].includes(location.pathname);
+
+  // Login and register have no nav at all
+  const isNoNav = ['/login', '/register'].includes(location.pathname);
 
   const navLinks = user?.role === 'ADMIN' ? ADMIN_NAV : MEMBER_NAV;
 
@@ -43,7 +45,7 @@ function AppShell() {
     }}>
 
       {/* ── Top bar ── */}
-      {!isPublic && (
+      {!isNoNav && (
         <nav style={{
           display: 'flex',
           alignItems: 'center',
@@ -60,8 +62,8 @@ function AppShell() {
             Spent
           </span>
 
-          {/* Desktop nav links */}
-          {!isMobile && (
+          {/* Desktop nav links — only shown when logged in */}
+          {user && !isMobile && (
             <div style={{ display: 'flex', gap: '4px' }}>
               {navLinks.map(({ to, label }) => (
                 <NavLink
@@ -85,23 +87,42 @@ function AppShell() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {user?.name && !isMobile && (
-              <span style={{ fontSize: '13px', color: '#525252' }}>{user.name}</span>
+            {user ? (
+              <>
+                {user.name && !isMobile && (
+                  <span style={{ fontSize: '13px', color: '#525252' }}>{user.name}</span>
+                )}
+                <button
+                  onClick={logout}
+                  style={{
+                    padding: '5px 12px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid #2d2d2d',
+                    borderRadius: '6px',
+                    color: '#737373',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/login"
+                style={{
+                  padding: '5px 12px',
+                  backgroundColor: 'transparent',
+                  border: '1px solid #2d2d2d',
+                  borderRadius: '6px',
+                  color: '#737373',
+                  fontSize: '13px',
+                  textDecoration: 'none',
+                }}
+              >
+                Sign in
+              </Link>
             )}
-            <button
-              onClick={logout}
-              style={{
-                padding: '5px 12px',
-                backgroundColor: 'transparent',
-                border: '1px solid #2d2d2d',
-                borderRadius: '6px',
-                color: '#737373',
-                fontSize: '13px',
-                cursor: 'pointer',
-              }}
-            >
-              Sign out
-            </button>
           </div>
         </nav>
       )}
@@ -109,8 +130,7 @@ function AppShell() {
       {/* ── Page content ── */}
       <main style={{
         flex: 1,
-        // On mobile, add bottom padding so content isn't hidden behind the bottom nav
-        paddingBottom: (!isPublic && isMobile) ? '64px' : undefined,
+        paddingBottom: (!isNoNav && user && isMobile) ? '64px' : undefined,
       }}>
         <Routes>
           <Route path="/login"    element={<LoginPage />} />
@@ -149,8 +169,8 @@ function AppShell() {
         </Routes>
       </main>
 
-      {/* ── Mobile bottom nav ── */}
-      {!isPublic && isMobile && (
+      {/* ── Mobile bottom nav — only when logged in ── */}
+      {!isNoNav && user && isMobile && (
         <nav style={{
           position: 'fixed',
           bottom: 0,
