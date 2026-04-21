@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { addExpense, deleteExpense, getExpenses } from '../api/expenses';
 import { useAuth } from '../context/AuthContext';
+import { useIsMobile } from '../hooks/useWindowWidth';
 import { usd } from '../utils/format';
 import type { Category, Expense } from '../types/expense';
 
@@ -46,6 +47,7 @@ export default function ExpensesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userId = user!.id;
+  const isMobile = useIsMobile();
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [name, setName] = useState('');
@@ -94,60 +96,93 @@ export default function ExpensesPage() {
       {/* Add form */}
       <div style={{ backgroundColor: '#141414', border: '1px solid #242424', borderRadius: '14px', padding: '20px', marginBottom: '24px' }}>
         <p style={{ fontSize: '13px', fontWeight: 600, color: '#a3a3a3', marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Add Expense</p>
-        <form onSubmit={handleAdd} style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '10px', alignItems: 'end' }}>
-          <div>
+        <form onSubmit={handleAdd}>
+          {/* Name always full-width */}
+          <div style={{ marginBottom: '10px' }}>
             <label style={{ display: 'block', fontSize: '12px', color: '#737373', marginBottom: '5px' }}>Name</label>
             <input
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder="e.g. Rent"
               required
-              style={{ ...inputStyle, width: '100%' }}
+              style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}
             />
           </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#737373', marginBottom: '5px' }}>Category</label>
-            <select
-              value={category}
-              onChange={e => setCategory(e.target.value as Category)}
-              style={{ ...inputStyle, appearance: 'none', paddingRight: '28px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737373' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+          {/* Category + Amount side by side, then Add button */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: isMobile ? '1fr 1fr' : '1fr 140px auto',
+            gap: '10px',
+            alignItems: 'end',
+          }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#737373', marginBottom: '5px' }}>Category</label>
+              <select
+                value={category}
+                onChange={e => setCategory(e.target.value as Category)}
+                style={{ ...inputStyle, width: '100%', boxSizing: 'border-box', appearance: 'none', paddingRight: '28px', backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23737373' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 10px center' }}
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '12px', color: '#737373', marginBottom: '5px' }}>Monthly ($)</label>
+              <input
+                type="number"
+                value={monthlyAmount}
+                onChange={e => setMonthlyAmount(e.target.value)}
+                placeholder="0.00"
+                required
+                min="0"
+                step="0.01"
+                style={{ ...inputStyle, width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            {/* On mobile the button is below, on desktop it sits inline */}
+            {!isMobile && (
+              <button
+                type="submit"
+                disabled={adding}
+                style={{
+                  padding: '9px 18px',
+                  backgroundColor: '#f59e0b',
+                  color: '#000',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  borderRadius: '8px',
+                  border: 'none',
+                  cursor: adding ? 'not-allowed' : 'pointer',
+                  whiteSpace: 'nowrap',
+                  opacity: adding ? 0.7 : 1,
+                }}
+              >
+                + Add
+              </button>
+            )}
+          </div>
+          {isMobile && (
+            <button
+              type="submit"
+              disabled={adding}
+              style={{
+                marginTop: '10px',
+                width: '100%',
+                padding: '11px',
+                backgroundColor: '#f59e0b',
+                color: '#000',
+                fontWeight: 700,
+                fontSize: '14px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: adding ? 'not-allowed' : 'pointer',
+                opacity: adding ? 0.7 : 1,
+              }}
             >
-              {CATEGORIES.map(c => (
-                <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label style={{ display: 'block', fontSize: '12px', color: '#737373', marginBottom: '5px' }}>Monthly ($)</label>
-            <input
-              type="number"
-              value={monthlyAmount}
-              onChange={e => setMonthlyAmount(e.target.value)}
-              placeholder="0.00"
-              required
-              min="0"
-              step="0.01"
-              style={{ ...inputStyle, width: '120px' }}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={adding}
-            style={{
-              padding: '9px 18px',
-              backgroundColor: '#f59e0b',
-              color: '#000',
-              fontWeight: 700,
-              fontSize: '13px',
-              borderRadius: '8px',
-              border: 'none',
-              cursor: adding ? 'not-allowed' : 'pointer',
-              whiteSpace: 'nowrap',
-              opacity: adding ? 0.7 : 1,
-            }}
-          >
-            + Add
-          </button>
+              {adding ? '...' : '+ Add Expense'}
+            </button>
+          )}
         </form>
       </div>
 
